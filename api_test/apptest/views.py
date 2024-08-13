@@ -24,7 +24,7 @@ class UserProfile(APIView):
                 return Response({"error": "No se proporcionaron credenciales de autenticación."}, status=status.HTTP_401_UNAUTHORIZED)
             
             user_data = CustomUserSerializer(user).data
-            permissions = user.user_permissions.values('id', 'name')  # Serializar los permisos con su id y nombre
+            permissions = user.user_permissions.values('id', 'name')  
             user_data['permissions'] = list(permissions)
 
             return Response(user_data)
@@ -33,7 +33,7 @@ class UserProfile(APIView):
 
 
 class CreateUser(APIView):
-    # Esta vista no está protegida, por lo que no requiere autenticación.
+    
     
     def post(self, request, *args, **kwargs):
         serializer = CustomUserSerializer(data=request.data)
@@ -51,7 +51,6 @@ class ViewUser(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Verificar permiso para ver usuarios
         if not request.user.has_perm('apptest.view_customuser'):
             return Response("El usuario no cuenta con los permisos necesarios para llevar a cabo estas funciones u operaciones.", status=status.HTTP_403_FORBIDDEN)
 
@@ -69,7 +68,6 @@ class ListUser(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Verificar permiso para listar usuarios
         if not request.user.has_perm('apptest.view_customuser'):
             return Response("El usuario no cuenta con los permisos necesarios para llevar a cabo estas funciones u operaciones.", status=status.HTTP_403_FORBIDDEN)
 
@@ -80,29 +78,24 @@ class ListUser(APIView):
 
 class RegisterUsers(APIView):
     def post(self, request, *args, **kwargs):
-        # Verificar permiso para registrar usuarios
         if not request.user.has_perm('apptest.add_customuser'):
             return Response("El usuario no cuenta con los permisos necesarios para llevar a cabo estas funciones u operaciones.", status=status.HTTP_403_FORBIDDEN)
 
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
-            # Crear el usuario
             user = serializer.save()
-            user.set_password(serializer.validated_data['password'])  # Encriptar la contraseña
-            user.is_active = True  # Activar el usuario inmediatamente
+            user.set_password(serializer.validated_data['password'])
+            user.is_active = True 
             user.save()
 
-            # Asignar permisos al usuario
             permissions = request.data.get('permissions', [])
             if permissions:
                 for permission_id in permissions:
                     user.user_permissions.add(permission_id)
             
-            # Generar el token JWT para el nuevo usuario
             token = AccessToken.for_user(user)
             token.set_exp(from_time=datetime.now() + timedelta(days=1))
             
-            # Crear la respuesta con los datos del usuario y el token
             response_data = {
                 "user": CustomUserSerializer(user).data,
                 "TokenJWT": str(token),
@@ -116,7 +109,6 @@ class UpdateUser(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
-        # Verificar permiso para actualizar usuarios
         if not request.user.has_perm('apptest.change_customuser'):
             return Response("El usuario no cuenta con los permisos necesarios para llevar a cabo estas funciones u operaciones.", status=status.HTTP_403_FORBIDDEN)
 
@@ -136,7 +128,6 @@ class DeleteUser(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, *args, **kwargs):
-        # Verificar permiso para eliminar usuarios
         if not request.user.has_perm('apptest.delete_customuser'):
             return Response("El usuario no cuenta con los permisos necesarios para llevar a cabo estas funciones u operaciones.", status=status.HTTP_403_FORBIDDEN)
 
@@ -159,22 +150,17 @@ class Login(APIView):
             if not user:
                 return Response({"error": "Error en la autenticación. No se encontró el usuario."}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Verificar si el usuario está activo
             if not user.is_active:
                 return Response({"error": "El usuario se encuentra inactivo, por lo que no tiene la posibilidad de iniciar sesión."}, status=status.HTTP_403_FORBIDDEN)
             
-            # Crear un token JWT para el usuario
             TokenJWT = AccessToken.for_user(user)
             TokenJWT.set_exp(from_time=datetime.now() + timedelta(days=1))
             
-            # Serializar los datos del usuario
             user_serializer = CustomUserSerializer(user)
             user_data = user_serializer.data
             
-            # Verificar si el usuario es administrador
             is_admin = user.is_staff
             
-            # Devolver la respuesta con el token y la información del usuario
             return Response({
                 "TokenJWT": str(TokenJWT),
                 "user": user_data,

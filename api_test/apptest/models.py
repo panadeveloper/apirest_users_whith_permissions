@@ -8,7 +8,7 @@ class CustomUserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         if password:
-            user.set_password(password)  # Asegúrate de usar set_password
+            user.set_password(password) 
         else:
             raise ValueError('La contraseña debe ser proporcionada')
         user.save(using=self._db)

@@ -29,7 +29,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         password = attrs.get('password')
         logging.debug(f"Trying to authenticate user with email: {email}")
 
-        # Autenticar usuario
+        
         user = authenticate(request=self.context.get('request'), email=email, password=password)
 
         if not user:
@@ -39,7 +39,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user.is_active:
             raise serializers.ValidationError('El usuario se encuentra inactivo, por lo que no tiene la posibilidad de iniciar sesión.')
 
-        # Generar el token de acceso y devolver los datos
+        
         data = super().validate(attrs)
         data['user'] = user
         return data
